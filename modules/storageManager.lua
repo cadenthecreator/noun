@@ -142,6 +142,9 @@ local function take(name, to, count,toslot)
     if type(count) ~= "number" then return false, "Invalid argument #3" end
     if type(toslot) ~= "number" then return false, "Invalid argument #4" end
     local to = peripheral.wrap(to)
+    if to.getInventory then
+        to = from.getInventory()
+    end
     local offset = 0
     if not item then return false, "Item not found" end
     local cmds, total = sum_lowest_to(item.locations,count)
@@ -177,6 +180,9 @@ local function put(from,fromslot,count)
     if not fromslot or type(fromslot) ~= "number" then return false, "Invalid argument #2" end
     if type(count) ~= "number" and count then return false, "Invalid argument #3" end
     from = peripheral.wrap(from)
+    if from.getInventory then
+        from = from.getInventory()
+    end
     local detail = from.getItemDetail(fromslot)
     if detail then
         count = math.min(detail.count, count or detail.count)
