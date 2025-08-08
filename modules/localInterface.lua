@@ -38,15 +38,7 @@ local function take()
     if takename ~= "" then
         stor.take(takename,out_name,count)
         items = stor.list(search)
-        PixelUI.removeWidget(list)
-        list = PixelUI.listView({
-            x=1,
-            y=1,
-            width=sx,
-            height=sy-1,
-            items = listify(items),
-            onSelect = onSelect
-        })
+        list.items = listify(items)
     end
 end
 
@@ -58,15 +50,7 @@ PixelUI.textBox({
     onChange = function(self, v)
         search = v
         items = stor.list(v)
-        PixelUI.removeWidget(list)
-        list = PixelUI.listView({
-            x=1,
-            y=1,
-            width=sx,
-            height=sy-1,
-            items = listify(items),
-            onSelect = onSelect
-        })
+        list.items = listify(items)
     end,
     onEnter = take
 })
