@@ -230,6 +230,43 @@ local function sortItems(item1, item2)
   return item1.count < item2.count
 end
 
+-- Tokenize into lowercase words
+local function tokenize(str)
+    local tokens = {}
+    for word in str:lower():gmatch("%w+") do
+        table.insert(tokens, word)
+    end
+    return tokens
+end
+
+-- Compute a granular relevance score
+local function relevance_score(item, query)
+    local item_l = item:lower()
+    local query_l = query:lower()
+
+    -- Strong matches
+    if item_l == query_l then return 100 end
+    if item_l:find("^" .. query_l) then return 90 end
+    if item_l:find(query_l, 1, true) then return 75 end
+
+    -- Token overlap
+    local item_tokens = tokenize(item)
+    local query_tokens = tokenize(query)
+    local match_count = 0
+
+    for _, q in ipairs(query_tokens) do
+        for _, t in ipairs(item_tokens) do
+            if t == q then
+                match_count = match_count + 1
+            end
+        end
+    end
+
+    local overlap_score = match_count * 10
+
+    return overlap_score
+end
+
 local function list(search)
     local results = {}
     for name,v in pairs(results) do
@@ -238,7 +275,13 @@ local function list(search)
             count = v.count
         }
     end
-    return table.sort(results,sortItems)
+    if not search then
+        return table.sort(results,sortItems)
+    else
+        return table.sort(results, table.sort(items, function(a, b)
+            return relevance_score(a.name, search) > relevance_score(b.name, search)
+        end))
+    end
 end
 
 local function verify()
