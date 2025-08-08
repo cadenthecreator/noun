@@ -1,2 +1,4 @@
 .vscode
 libs/pixelui.lua
+libs/fzy.lua
+.items

@@ -1,3 +1,9 @@
+if not fs.exists("libs/fzy.lua") then
+    shell.run("wget https://github.com/swarn/fzy-lua/raw/refs/heads/main/src/fzy_lua.lua libs/fzy.lua")
+end
+
+local fzy = require("libs.fzy")
+
 local peripherals = peripheral.getNames()
 local storage_filters = {
     "sc%-goodies",
@@ -227,94 +233,45 @@ local function put(from,fromslot,count)
 end
 
 local function sortItems(item1, item2) 
-  return item1.count < item2.count
+  return item1.count > item2.count
 end
 
--- Tokenize into lowercase words
-local function tokenize(str)
-    local tokens = {}
-    for word in str:lower():gmatch("%w+") do
-        table.insert(tokens, word)
-    end
-    return tokens
-end
-
--- Compute a granular relevance score
-local function relevance_score(item, query)
-    local item_l = item:lower()
-    local query_l = query:lower()
-
-    -- Strong matches
-    if item_l == query_l then return 100 end
-    if item_l:find("^" .. query_l) then return 90 end
-    if item_l:find(query_l, 1, true) then return 75 end
-
-    -- Token overlap
-    local item_tokens = tokenize(item)
-    local query_tokens = tokenize(query)
-    local match_count = 0
-
-    for _, q in ipairs(query_tokens) do
-        for _, t in ipairs(item_tokens) do
-            if t == q then
-                match_count = match_count + 1
-            end
-        end
-    end
-
-    local overlap_score = match_count * 10
-
-    return overlap_score
-end
 
 local function list(search)
     local results = {}
-    for name,v in pairs(results) do
+    for name,v in pairs(items) do
         results[#results+1] = {
             name = name,
             count = v.count
         }
     end
-    if not search then
-        return table.sort(results,sortItems)
+    if not search or search == "" then
+        table.sort(results,sortItems)
     else
-        return table.sort(results, table.sort(items, function(a, b)
-            return relevance_score(a.name, search) > relevance_score(b.name, search)
-        end))
+        table.sort(results, function(a, b)
+            return fzy.score(search, a.name) > fzy.score(search, b.name)
+        end)
     end
+    return results
 end
-
-local function verify()
-    local lists = {}
-    for k,v in pairs(items) do
-        for _,l in ipairs(v.locations) do
-            if not lists[l.id] then
-                lists[l.id] = storage[l.id].list()
-            end
-            assert(lists[l.id][l.slot],"no item found at "..l.id..", "..tostring(l.slot))
-            assert(lists[l.id][l.slot].count == l.count and lists[l.id][l.slot].name == v.id, "verification failed! "..tostring(lists[l.id][l.slot].count).."=="..tostring(l.count)..lists[l.id][l.slot].name.."==", v.id)
-        end
-    end
-end
-
 if not fs.exists(".items") then
     rescan()
     saveitems()
 end
 print("loading from file...")
 loaditems()
-print("verifying...")
-verify()
 print("done!")
-
+os.queueEvent("storage_ready")
 while true do
     local args = {os.pullEvent()}
     local id = args[2]
     if args[1] == "take" then
         os.queueEvent(tostring(id).."_take_done",take(args[3],args[4],args[5],args[6]))
+        saveitems()
     elseif args[1] == "put" then
         os.queueEvent(tostring(id).."_put_done",put(args[3],args[4],args[5]))
+        saveitems()
     elseif args[1] == "list" then
-        os.queueEvent(tostring(id).."_list_done",take(args[3]))
+        os.queueEvent(tostring(id).."_list_done",list(args[3]))
     end
 end
