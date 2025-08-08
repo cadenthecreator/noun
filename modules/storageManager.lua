@@ -143,7 +143,7 @@ local function take(name, to, count,toslot)
     if type(toslot) ~= "number" then return false, "Invalid argument #4" end
     local to = peripheral.wrap(to)
     if to.getInventory then
-        to = from.getInventory()
+        to = to.getInventory()
     end
     local offset = 0
     if not item then return false, "Item not found" end
