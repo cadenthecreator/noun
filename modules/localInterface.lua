@@ -174,7 +174,7 @@ end
 
 local function pull()
    while true do
-      if (out or turtle).getItemDetail(1) then
+      if out.getItemDetail(1) then
          stor.put(out_name,1)
          items = stor.list(tabs.storage.search)
       end
