@@ -223,14 +223,13 @@ local function put(from,fromslot,count)
                     end
                 end
                 from.pushItems(location,fromslot,c.count,slot)
-                item.locations[#item.locations+1] =
+                item.locations[1] =
                 {
                     id = location,
                     slot = slot,
                     count = c.count,
                     maxCount = detail.maxCount,
                 }
-                item.count = item.count+count
                 items[detail.displayName] = item
             else
                 local location = item.locations[c.location]
