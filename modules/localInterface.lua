@@ -1,5 +1,23 @@
 local stor = require("libs.storageLib")
-local out_name = "minecraft:barrel_2"
+local completion = require("cc.completion")
+settings.define("interface.inventory",
+   {
+      type = "string",
+      description = "the inventory for taking in and depositing items"
+   }
+)
+settings.save()
+local out_name =settings.get("interface.inventory")
+if not out_name then
+   sleep()
+   local peripherals = peripheral.find("peripheral_hub").getNamesRemote()
+   peripherals[#peripherals+1] = peripheral.find("peripheral_hub").getNameLocal()
+   print("no interface inventory specified")
+   term.write("inventory: ")
+   settings.set("interface.inventory", read(nil, nil, function(text) return completion.choice(text, peripherals) end))
+   settings.save()
+   os.reboot()
+end
 local out = peripheral.wrap(out_name)
 local lightcolor = colors.white
 local mediumcolor = colors.lightGray
