@@ -42,6 +42,7 @@ local function rescan()
                 items[item.displayName] = {
                     count = item.count,
                     id = id.name,
+                    maxCount = item.maxCount,
                     locations = {
                         {
                             id = n,
@@ -202,7 +203,7 @@ local function put(from,fromslot,count)
                 local location = ""
                 for k,v in pairs(storage) do
                     local items = v.list()
-                    for s = 1,v.size()+1 do
+                    for s = 1,v.size() do
                         if not items[s] then
                             slot = s
                             location = k
@@ -249,7 +250,7 @@ local function list(search)
         results[#results+1] = {
             name = name,
             count = v.count,
-            maxCount = v.locations[1].maxCount
+            maxCount = v.maxCount
         }
     end
     if not search or search == "" then
