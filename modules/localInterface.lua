@@ -8,6 +8,7 @@ settings.define("interface.inventory",
 )
 settings.save()
 local out_name =settings.get("interface.inventory")
+os.pullEvent("storage_ready")
 if not out_name then
    sleep()
    local peripherals = peripheral.find("peripheral_hub").getNamesRemote()
@@ -23,7 +24,6 @@ local lightcolor = colors.white
 local mediumcolor = colors.lightGray
 local darkcolor = colors.black
 local sx,sy = term.getSize()
-os.pullEvent("storage_ready")
 local items = stor.list()
 local function listify(l)
    local out = {}
