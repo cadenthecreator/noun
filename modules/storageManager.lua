@@ -137,7 +137,7 @@ local function take(name, to, count,toslot)
     if not name or type(name) ~= "string" then return false, "Invalid argument #1" end
     if not to or type(to) ~= "string" then return false, "Invalid argument #2" end
     local item = items[name]
-    count = math.min(count or 64,item.count)
+    count = math.min(count or item.locations[1].maxCount,item.count)
     toslot = toslot or 1
     if type(count) ~= "number" then return false, "Invalid argument #3" end
     if type(toslot) ~= "number" then return false, "Invalid argument #4" end
@@ -155,7 +155,7 @@ local function take(name, to, count,toslot)
             local quantity = to.pullItems(location.id,location.slot,math.min(count,location.maxCount),toslot+offset)
             count = count - quantity
             local detail = to.getItemDetail(toslot+offset)
-            if detail and (detail.maxCount == detail.count or detail.displayName ~= name) then
+            if (detail and (detail.maxCount == detail.count or detail.displayName ~= name)) or quantity == 0 then
                 offset = offset + 1
             end
         until count == 0
@@ -248,7 +248,8 @@ local function list(search)
     for name,v in pairs(items) do
         results[#results+1] = {
             name = name,
-            count = v.count
+            count = v.count,
+            maxCount = v.locations[1].maxCount
         }
     end
     if not search or search == "" then
@@ -267,6 +268,7 @@ end
 print("loading from file...")
 loaditems()
 print("done!")
+sleep(0)
 os.queueEvent("storage_ready")
 while true do
     local args = {os.pullEvent()}
