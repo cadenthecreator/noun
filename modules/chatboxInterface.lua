@@ -30,7 +30,7 @@ end
 while true do
     local event, user, command, args, data = os.pullEvent("command")
     if data.ownerOnly then
-        local m = manipulator.getOwnerMeta()
+        local m = manipulator.getMetaOwner()
         if command == "dep" or command == "deposit" or command == "d" then
             local succ, out = stor.put(manipulator_name,m.heldItemSlot,tonumber(args[1]))
             if succ then
@@ -55,7 +55,7 @@ while true do
             local strlist = {}
             for i = 1,math.min(#output,10) do
                 local item = output[i]
-                strlist[i] = item.name.." - "..tostring(item.coount)
+                strlist[i] = item.name.." - "..tostring(item.count)
             end
             chatbox.tell(user, table.concat(strlist,"\n"), BOT_NAME)
         end
