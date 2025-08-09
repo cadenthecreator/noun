@@ -1,4 +1,5 @@
 local stor = require("libs.storageLib")
+local completion = require("cc.completion")
 settings.define("interface.manipulator",
    {
       type = "string",
