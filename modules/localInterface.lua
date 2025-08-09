@@ -2,7 +2,7 @@ local stor = require("libs.storageLib")
 local out_name = "minecraft:barrel_2"
 local out = peripheral.wrap(out_name)
 local lightcolor = colors.white
-local mediumcolor = colors.gray
+local mediumcolor = colors.lightGray
 local darkcolor = colors.black
 local sx,sy = term.getSize()
 os.pullEvent("storage_ready")
