@@ -247,11 +247,15 @@ end
 local function list(search)
     local results = {}
     for name,v in pairs(items) do
-        results[#results+1] = {
-            name = name,
-            count = v.count,
-            maxCount = v.maxCount
-        }
+        if v.count > 0 then
+            results[#results+1] = {
+                name = name,
+                count = v.count,
+                maxCount = v.maxCount
+            }
+        else
+            items[name] = nil
+        end
     end
     if not search or search == "" then
         table.sort(results,sortItems)
