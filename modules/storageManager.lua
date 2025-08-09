@@ -129,6 +129,7 @@ local function fill_highest(locations,count,max)
                 count = math.min(max,count),
             }
             count = count - math.min(max,count)
+            total = total + math.min(max,count)
         until count == 0
     end
     return cmds, total
@@ -230,6 +231,7 @@ local function put(from,fromslot,count)
                     maxCount = detail.maxCount,
                 }
                 item.count = item.count+count
+                items[detail.displayName] = item
             else
                 local location = item.locations[c.location]
                 from.pushItems(location.id,fromslot,c.count,location.slot)

@@ -182,4 +182,8 @@ local function pull()
    end
 end
 
-parallel.waitForAny(render,update,pull)
+parallel.waitForAny(
+   render,
+   update,
+   pull
+)
