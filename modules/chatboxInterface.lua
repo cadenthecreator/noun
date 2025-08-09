@@ -32,7 +32,7 @@ while true do
     if data.ownerOnly then
         local m = manipulator.getMetaOwner()
         if command == "dep" or command == "deposit" or command == "d" then
-            local succ, out = stor.put(manipulator_name,m.heldItemSlot,tonumber(args[1]))
+            local succ, out = stor.put(manipulator_name,m.heldItemSlot+1,tonumber(args[1]))
             if succ then
                 chatbox.tell(user, "deposited items", BOT_NAME) 
             else

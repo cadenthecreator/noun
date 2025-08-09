@@ -139,6 +139,7 @@ local function take(name, to, count,toslot)
     if not name or type(name) ~= "string" then return false, "Invalid argument #1" end
     if not to or type(to) ~= "string" then return false, "Invalid argument #2" end
     local item = items[name]
+    if not item then return false, "Item not found" end
     count = math.min(count or item.locations[1].maxCount,item.count)
     toslot = toslot or 1
     if type(count) ~= "number" then return false, "Invalid argument #3" end
@@ -148,7 +149,6 @@ local function take(name, to, count,toslot)
         to = to.getInventory()
     end
     local offset = 0
-    if not item then return false, "Item not found" end
     local cmds, total = sum_lowest_to(item.locations,count)
     for _,i in ipairs(cmds) do
         local location = item.locations[i.location]
