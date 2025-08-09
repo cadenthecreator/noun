@@ -167,12 +167,16 @@ local function take(name, to, count,toslot)
         end
         item.locations[i.location] = location
     end
-    local new_locations = {}
-    for _,i in pairs(item.locations) do
-        new_locations[#new_locations+1] = i
+    if #item.locations > 0 then
+        local new_locations = {}
+        for _,i in pairs(item.locations) do
+            new_locations[#new_locations+1] = i
+        end
+        item.locations = new_locations
+        item.count = item.count - count
+    else
+        items[name] = nil
     end
-    item.locations = new_locations
-    item.count = item.count - count
     return true, total
 end
 
