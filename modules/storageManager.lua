@@ -240,6 +240,7 @@ local function put(from,fromslot,count)
                 item.locations[c.location] = location
             end
         end
+        return true, total
     else
         return false, "No items found"
     end

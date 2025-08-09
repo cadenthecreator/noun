@@ -34,7 +34,7 @@ while true do
         if command == "dep" or command == "deposit" or command == "d" then
             local succ, out = stor.put(manipulator_name,m.heldItemSlot,tonumber(args[1]))
             if succ then
-                chatbox.tell(user, "deposited "..tonumber(out).." items", BOT_NAME) 
+                chatbox.tell(user, "deposited items", BOT_NAME) 
             else
                 chatbox.tell(user, out, BOT_NAME)
             end
@@ -46,7 +46,7 @@ while true do
             local name = table.concat(args," ")
             local succ, out = stor.take(name,manipulator_name,count)
             if succ then
-                chatbox.tell(user, "took "..tonumber(out).." items", BOT_NAME) 
+                chatbox.tell(user, "took items", BOT_NAME) 
             else
                 chatbox.tell(user, out, BOT_NAME)
             end
