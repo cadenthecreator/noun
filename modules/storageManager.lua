@@ -196,6 +196,7 @@ local function put(from,fromslot,count)
         if not item then
             item = {
                     count = detail.count,
+                    maxCount = detail.maxCount,
                     id = detail.name,
                     locations = {
                     }
