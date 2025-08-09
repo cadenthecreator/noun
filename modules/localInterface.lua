@@ -178,6 +178,7 @@ local function pull()
          stor.put(out_name,1)
          items = stor.list(tabs.storage.search)
       end
+      sleep()
    end
 end
 
