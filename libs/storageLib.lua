@@ -9,7 +9,7 @@ function lib.put(from,fromslot,count)
         _,succ,msg = os.pullEvent(tostring(id).."_put_done")
     end,
     function ()
-        sleep(1)
+        sleep(2)
     end
     )
     return succ,msg
@@ -24,7 +24,7 @@ function lib.take(name, to, count, toslot)
         _,succ,msg = os.pullEvent(tostring(id).."_take_done")
     end,
     function ()
-        sleep(1)
+        sleep(2)
     end
     )
     return succ,msg
@@ -39,7 +39,7 @@ function lib.list(search)
         _,out = os.pullEvent(tostring(id).."_list_done")
     end,
     function ()
-        sleep(1)
+        sleep(2)
     end
     )
     return out
