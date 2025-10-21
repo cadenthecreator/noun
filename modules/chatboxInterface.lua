@@ -44,7 +44,7 @@ while true do
                 count = tonumber(table.remove(args,#args))
             end
             local name = table.concat(args," ")
-            local succ, out = stor.take(name,manipulator_name,count)
+            local succ, out = stor.take(stor.list(name)[1].id,manipulator_name,count)
             if succ then
                 chatbox.tell(user, "took items", BOT_NAME) 
             else
