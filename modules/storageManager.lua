@@ -1,3 +1,6 @@
+local expect = dofile("rom/modules/main/cc/expect.lua")
+expect = expect.expect
+
 if not fs.exists("libs/fzy.lua") then
     shell.run("wget https://github.com/swarn/fzy-lua/raw/refs/heads/main/src/fzy_lua.lua libs/fzy.lua")
 end
@@ -38,25 +41,28 @@ local function rescan()
     for n,i in pairs(storage) do
         for s,id in pairs(i.list()) do
             local item = i.getItemDetail(s)
-            if not items[item.displayName] then
-                items[item.displayName] = {
+            if not items[item.name] then
+                items[item.name] = {
                     count = item.count,
-                    id = id.name,
+                    id = item.name,
+                    name = item.displayName,
                     maxCount = item.maxCount,
                     locations = {
                         {
                             id = n,
                             slot = s,
+                            name = item.displayName,
                             count = item.count,
                             maxCount = item.maxCount
                         }
                     }
                 }
             else
-                items[item.displayName].count = items[item.displayName].count + item.count
-                items[item.displayName].locations[#items[item.displayName].locations+1] = {
+                items[item.name].count = items[item.name].count + item.count
+                items[item.name].locations[#items[item.name].locations+1] = {
                     id = n,
                     slot = s,
+                    name = item.displayName,
                     count = item.count,
                     maxCount = item.maxCount,
                 }
@@ -82,12 +88,13 @@ local function sum_lowest_to(locations,count)
         end
         if lowest_indx > 0 then
             blacklist[lowest_indx] = true
+            local take_count = math.min(lowest,count)
             cmds[#cmds+1] = {
                 location = lowest_indx,
-                count = math.min(lowest,count),
+                count = take_count,
             }
-            count = count - math.min(lowest,count)
-            total = total + math.min(lowest,count)
+            count = count - take_count
+            total = total + take_count
         end
     until count == 0 or #locations == #blacklist
     return cmds, total
@@ -136,86 +143,123 @@ local function fill_highest(locations,count,max)
 end
 
 local function take(name, to, count,toslot)
-    if not name or type(name) ~= "string" then return false, "Invalid argument #1" end
-    if not to or type(to) ~= "string" then return false, "Invalid argument #2" end
+    expect(1,name,"string")
+    expect(2,to,"string")
     local item = items[name]
-    if not item then return false, "Item not found" end
+    if not item then error("Item not found",2) end
+    -- plan to take up to requested or up to one stack if unspecified
     count = math.min(count or item.locations[1].maxCount,item.count)
     toslot = toslot or 1
-    if type(count) ~= "number" then return false, "Invalid argument #3" end
-    if type(toslot) ~= "number" then return false, "Invalid argument #4" end
+    expect(3,count,"number")
+    expect(4,toslot,"number")
     local to = peripheral.wrap(to)
     if to.getInventory then
         to = to.getInventory()
     end
     local offset = 0
-    local cmds, total = sum_lowest_to(item.locations,count)
+    local cmds, planned_total = sum_lowest_to(item.locations,count)
+    local actual_total = 0
+
     for _,i in ipairs(cmds) do
         local location = item.locations[i.location]
-        local count = i.count + 0
-        repeat
-            local quantity = to.pullItems(location.id,location.slot,math.min(count,location.maxCount),toslot+offset)
-            count = count - quantity
-            local detail = to.getItemDetail(toslot+offset)
-            if (detail and (detail.maxCount == detail.count or detail.displayName ~= name)) or quantity == 0 then
+        if not location then goto continue_end end
+        local need = i.count
+        local remaining = need
+        -- attempt to fill destination slots starting at toslot+offset
+        while remaining > 0 do
+            local destSlot = toslot + offset
+            -- avoid infinite loops: if destination doesn't have size, cap attempts
+            local destSize = (to.size and to.size()) or 64
+            if destSlot > destSize then
+                -- no more destination slots; stop trying
+                break
+            end
+            local quantity = to.pullItems(location.id,location.slot,math.min(remaining, location.maxCount), destSlot)
+            remaining = remaining - (quantity or 0)
+            actual_total = actual_total + (quantity or 0)
+
+            -- check destination slot detail: if slot is full or contains different item, move to next slot
+            local detail = to.getItemDetail(destSlot)
+            if (quantity == 0) or (detail and (detail.maxCount == detail.count or detail.name ~= name)) then
                 offset = offset + 1
             end
-        until count == 0
-        if i.count == location.count then
-            location = nil
-        else
-            location.count = location.count - i.count
+
+            -- if pullItems returned 0 and destination slot moved forward past destSize, stop
+            if quantity == 0 and destSlot >= destSize then
+                break
+            end
         end
-        item.locations[i.location] = location
+
+        local moved_from_location = need - remaining
+        if moved_from_location <= 0 then
+            -- nothing moved from this location
+            goto continue_store
+        end
+
+        -- subtract moved amount from storage location
+        if moved_from_location >= location.count then
+            -- remove this location
+            item.locations[i.location] = nil
+        else
+            location.count = location.count - moved_from_location
+            item.locations[i.location] = location
+        end
+
+        ::continue_store::
+        ::continue_end::
     end
+
+    -- compact locations and update item count by actual moved
     if #item.locations > 0 then
         local new_locations = {}
         for _,i in pairs(item.locations) do
-            new_locations[#new_locations+1] = i
+            if i then new_locations[#new_locations+1] = i end
         end
         item.locations = new_locations
-        item.count = item.count - count
+        item.count = item.count - actual_total
+        if item.count < 0 then item.count = 0 end
     else
         items[name] = nil
     end
-    return true, total
+    return true, actual_total
 end
 
 local function put(from,fromslot,count)
     if not from or type(from) ~= "string" then return false, "Invalid argument #1" end
     if not fromslot or type(fromslot) ~= "number" then return false, "Invalid argument #2" end
     if type(count) ~= "number" and count then return false, "Invalid argument #3" end
+    count = count or 64
     from = peripheral.wrap(from)
     if from.getInventory then
         from = from.getInventory()
     end
     local detail = from.getItemDetail(fromslot)
     if detail then
-        count = math.min(detail.count, count or detail.count)
-        local item = items[detail.displayName]
+        local item = items[detail.name]
         if not item then
             item = {
-                    count = detail.count,
+                    count = 0,
                     maxCount = detail.maxCount,
+                    name = detail.displayName,
                     id = detail.name,
                     locations = {
                     }
                 }
         end
-        local cmds,total = fill_highest(item.locations,math.min(item.count,count), detail.maxCount)
+        local to_move = math.min(detail.count, count)
+        local cmds,total_planned = fill_highest(item.locations,to_move, detail.maxCount)
+        local actual_total = 0
+
         for _,c in ipairs(cmds) do
             if c.location == -1 then
                 local slot = -1
                 local location = ""
                 for k,v in pairs(storage) do
-                    local items = v.list()
+                    local items_list = v.list()
                     for s = 1,v.size() do
-                        if not items[s] then
+                        if not items_list[s] then
                             slot = s
                             location = k
-                            break
-                        end
-                        if slot ~= -1 then
                             break
                         end
                     end
@@ -223,24 +267,42 @@ local function put(from,fromslot,count)
                         break
                     end
                 end
-                from.pushItems(location,fromslot,c.count,slot)
-                item.locations[1] =
-                {
-                    id = location,
-                    slot = slot,
-                    count = c.count,
-                    maxCount = detail.maxCount,
-                }
-                items[detail.displayName] = item
+                if slot == -1 then
+                    -- no empty slot found, skip
+                else
+                    local moved = from.pushItems(location,fromslot,c.count,slot) or 0
+                    if moved > 0 then
+                        item.locations[#item.locations+1] =
+                        {
+                            id = location,
+                            slot = slot,
+                            count = moved,
+                            name = detail.displayName,
+                            maxCount = detail.maxCount,
+                        }
+                        actual_total = actual_total + moved
+                    end
+                end
             else
                 local location = item.locations[c.location]
-                from.pushItems(location.id,fromslot,c.count,location.slot)
-                location.count = location.count + c.count
-                item.count = item.count+count
-                item.locations[c.location] = location
+                if location then
+                    local moved = from.pushItems(location.id,fromslot,c.count,location.slot) or 0
+                    if moved > 0 then
+                        location.count = location.count + moved
+                        item.locations[c.location] = location
+                        actual_total = actual_total + moved
+                    end
+                end
             end
         end
-        return true, total
+
+        item.count = item.count + actual_total
+        if item.count > 0 then
+            items[detail.name] = item
+        else
+            items[detail.name] = nil
+        end
+        return true, actual_total
     else
         return false, "No items found"
     end
@@ -256,7 +318,8 @@ local function list(search)
     for name,v in pairs(items) do
         if v.count > 0 then
             results[#results+1] = {
-                name = name,
+                id = v.id,
+                name = v.name,
                 count = v.count,
                 maxCount = v.maxCount
             }

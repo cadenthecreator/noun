@@ -28,7 +28,7 @@ local items = stor.list()
 local function listify(l)
    local out = {}
    for _,i in ipairs(l) do
-        out[#out+1] = i.name..string.rep(" ",sx-i.name:len()-tostring(i.count):len())..tostring(i.count)
+      out[#out+1] = i.name..string.rep(" ",sx-i.name:len()-tostring(i.count):len())..tostring(i.count)
    end
    return out
 end
@@ -123,7 +123,7 @@ tabs.extract = {
             self.count = self.count:sub(1,self.count:len()-1)
          elseif event[2] == keys.enter then
             if take then
-               stor.take(take.name,out_name,tonumber(self.count),2)
+               stor.take(take.id,out_name,tonumber(self.count),2)
                items = stor.list(tabs.storage.search)
             end
             self.count = ""
