@@ -51,7 +51,6 @@ while true do
                 chatbox.tell(user, out, BOT_NAME)
             end
         elseif command == "search" or command == "s" or command == "query" or command == "q" or command == "find" or command == "f" then
-            print(table.concat(args," "))
             local output = stor.list(table.concat(args," "))
             local strlist = {}
             for i = 1,math.min(#output,10) do
