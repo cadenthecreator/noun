@@ -50,13 +50,18 @@ while true do
             end
             -- pass nil when there's no search string so stor.list sorts by count
             local results = stor.list((name ~= "" and name) or nil)
-            local first = results and results[1]
-            if not first then
+            local matching = nil
+            for _,v in ipairs(results) do
+                if v.name == name then
+                    matching = v
+                end
+            end
+            if not matching then
                 chatbox.tell(user, "no matching item found", BOT_NAME)
             else
-                local succ, out = stor.take(first.id,manipulator_name,count)
+                local succ, out = stor.take(matching.id,manipulator_name,count)
                 if succ then
-                    chatbox.tell(user, "took "..tostring(out).." x "..first.name, BOT_NAME) 
+                    chatbox.tell(user, "took "..tostring(out).." x "..matching.name, BOT_NAME) 
                 else
                     chatbox.tell(user, out, BOT_NAME)
                 end
