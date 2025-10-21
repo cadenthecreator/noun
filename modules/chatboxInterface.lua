@@ -27,31 +27,43 @@ if not chatbox.hasCapability("command") or not chatbox.hasCapability("tell") the
   error("Chatbox does not have the required permissions. Did you register the license?")
 end
 
+
 while true do
     local event, user, command, args, data = os.pullEvent("command")
     if data.ownerOnly then
         local m = manipulator.getMetaOwner()
         if command == "dep" or command == "deposit" or command == "d" then
-            local succ, out = stor.put(manipulator_name,m.heldItemSlot+1,tonumber(args[1]))
+            local succ, out = stor.put(manipulator_name,m.heldItemSlot+1,tonumber(args and args[1]))
             if succ then
-                chatbox.tell(user, "deposited items", BOT_NAME) 
+                chatbox.tell(user, "deposited "..tostring(out).." items", BOT_NAME) 
             else
                 chatbox.tell(user, out, BOT_NAME)
             end
         elseif command == "take" or command == "give" or command == "t" or command == "g" then
             local count = nil
-            if tonumber(args[#args]) then
+            if args and tonumber(args[#args]) then
                 count = tonumber(table.remove(args,#args))
             end
-            local name = table.concat(args," ")
-            local succ, out = stor.take(stor.list(name)[1].id,manipulator_name,count)
-            if succ then
-                chatbox.tell(user, "took items", BOT_NAME) 
+            local name = ""
+            if args and #args > 0 then
+                name = table.concat(args," ")
+            end
+            -- pass nil when there's no search string so stor.list sorts by count
+            local results = stor.list((name ~= "" and name) or nil)
+            local first = results and results[1]
+            if not first then
+                chatbox.tell(user, "no matching item found", BOT_NAME)
             else
-                chatbox.tell(user, out, BOT_NAME)
+                local succ, out = stor.take(first.id,manipulator_name,count)
+                if succ then
+                    chatbox.tell(user, "took "..tostring(out).." x "..first.name, BOT_NAME) 
+                else
+                    chatbox.tell(user, out, BOT_NAME)
+                end
             end
         elseif command == "search" or command == "s" or command == "query" or command == "q" or command == "find" or command == "f" then
-            local output = stor.list(table.concat(args," "))
+            local query = (args and #args > 0) and table.concat(args," ") or nil
+            local output = stor.list(query)
             local strlist = {}
             for i = 1,math.min(#output,10) do
                 local item = output[i]

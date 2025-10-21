@@ -313,6 +313,18 @@ local function sortItems(item1, item2)
 end
 
 
+local function sortItems(item1, item2) 
+  return item1.count > item2.count
+end
+
+local function split_terms(s)
+    if not s or s == "" then return nil end
+    local out = {}
+    for tok in s:lower():gmatch("%S+") do out[#out+1] = tok end
+    if #out == 0 then return nil end
+    return out
+end
+
 local function list(search)
     local results = {}
     for name,v in pairs(items) do
@@ -327,15 +339,44 @@ local function list(search)
             items[name] = nil
         end
     end
-    if not search or search == "" then
-        table.sort(results,sortItems)
-    else
-        table.sort(results, function(a, b)
-            return fzy.score(search, a.name) > fzy.score(search, b.name)
-        end)
+
+    local terms = split_terms(search)
+    if not terms then
+        table.sort(results, sortItems)
+        return results
     end
-    return results
+
+    -- score each item by summing per-token fzy scores; require all tokens to match (score > 0)
+    local scored = {}
+    for _,item in ipairs(results) do
+        local name_l = item.name:lower()
+        local total_score = 0
+        local ok = true
+        for _,tok in ipairs(terms) do
+            local s = fzy.score(tok, name_l) or 0
+            if s <= 0 then
+                ok = false
+                break
+            end
+            total_score = total_score + s
+        end
+        if ok then
+            scored[#scored+1] = { item = item, score = total_score }
+        end
+    end
+
+    table.sort(scored, function(a,b)
+        if a.score == b.score then
+            return a.item.count > b.item.count
+        end
+        return a.score > b.score
+    end)
+
+    local out = {}
+    for _,v in ipairs(scored) do out[#out+1] = v.item end
+    return out
 end
+
 if not fs.exists(".items") then
     rescan()
     saveitems()
